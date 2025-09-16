@@ -240,6 +240,6 @@ def get_scan(scan_id: int, db=Depends(get_db)):
             "final_position_usd": r.final_position_usd,
             "entry_price": round(r.entry_price, 4),
             "est_shares": round(r.est_shares, 4),
-            "stop_loss_per_share": r.stop_loss_per_share,
+            "stop_loss_per_share": round(r.stop_loss_per_share, 4),
         },
     }
