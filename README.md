@@ -1,6 +1,6 @@
-# EmotionalShieldAI
+# Morning TradeFit Scan API
 
-EmotionalShieldAI is a FastAPI-based backend application designed to provide emotional well-being support and analysis. It leverages modern Python libraries and a SQLite database to manage and process user data securely and efficiently.
+Morning TradeFit Scan API is a FastAPI-based backend application designed to provide emotional well-being support and analysis. It leverages modern Python libraries and a SQLite database to manage and process user data securely and efficiently.
 
 ## Features
 
@@ -8,14 +8,21 @@ EmotionalShieldAI is a FastAPI-based backend application designed to provide emo
 - SQLite database integration
 - Modular code structure (CRUD, models, schemas, utils)
 - Docker Compose support for easy deployment
-- Environment management with `env_emotionalshieldai` virtual environment
 
 ## Project Structure
 
 ```
+
 EmotionalShieldAI/
+├── .env
+├── .git/
+├── .gitignore
+├── README.md
+├── TradeFit.postman_collection.json
+├── __pycache__/
 ├── app/
 │   ├── __init__.py
+│   ├── __pycache__/
 │   ├── config.py
 │   ├── crud.py
 │   ├── database.py
@@ -23,11 +30,18 @@ EmotionalShieldAI/
 │   ├── models.py
 │   ├── schemas.py
 │   └── utils.py
-├── requirements.txt
 ├── compose.yml
-├── tradefit.db
 ├── env_emotionalshieldai/
-└── ...
+│   ├── .gitignore
+│   ├── bin/
+│   ├── include/
+│   ├── lib/
+│   └── pyvenv.cfg
+├── requirements.txt
+├── run.sh
+├── sqlite_to_mysql.md
+└── tradefit.db
+
 ```
 
 ## Getting Started
@@ -43,30 +57,19 @@ EmotionalShieldAI/
 1. **Clone the repository:**
 
    ```bash
-   git clone <repo-url>
+   git clone https://github.com/vigneshv1cky/EmotionalShieldAI.git
    cd EmotionalShieldAI
    ```
 
-2. **Create and activate virtual environment:**
+2. **Run the application using the provided script:**
 
    ```bash
-   python3 -m venv env_emotionalshieldai
-   source env_emotionalshieldai/bin/activate
+   ./run.sh
    ```
 
-3. **Install dependencies:**
+   - The script will automatically create a virtual environment (if not present), install dependencies, and start the FastAPI server.
 
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Run the application:**
-
-   ```bash
-   uvicorn app.main:app --reload --port 8000
-   ```
-
-5. **Access the API docs:**
+3. **Access the API docs:**
    - Open [http://localhost:8000/docs](http://localhost:8000/docs) in your browser.
 
 ### Setup (Docker)

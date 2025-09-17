@@ -36,69 +36,6 @@ def root():
     }
 
 
-# Custom /docs endpoint for human-friendly API documentation
-@app.get("/docs", tags=["Documentation"])
-def custom_docs():
-    """
-    Returns a detailed description of all API endpoints and their usage.
-    """
-    return {
-        "title": "Morning TradeFit Scan API Documentation",
-        "version": "4.0.0",
-        "description": (
-            "This API provides endpoints to perform and retrieve Morning TradeFit scans, "
-            "which help in risk management and position sizing for trading based on health and market data."
-        ),
-        "endpoints": [
-            {
-                "path": "/",
-                "method": "GET",
-                "summary": "API root. Returns basic info and available endpoints.",
-            },
-            {
-                "path": "/health",
-                "method": "GET",
-                "summary": "Liveness check. Returns status and current UTC time.",
-            },
-            {
-                "path": "/scan",
-                "method": "POST",
-                "summary": "Perform a new scan. Computes position sizing and risk based on input.",
-                "request_body": {
-                    "trade_symbol": "str (required) - Trading symbol (e.g., AAPL)",
-                    "total_value": "float (required) - Total account value in USD",
-                    "sleep_hours": "float (required) - Hours of sleep",
-                    "exercise_minutes": "int (required) - Minutes of exercise",
-                },
-                "response": "ScanOutput object with computed health, bankroll, risk, and position blocks.",
-            },
-            {
-                "path": "/scans",
-                "method": "GET",
-                "summary": "List previous scans. Supports pagination and optional symbol filter.",
-                "query_params": {
-                    "limit": "int (default=50)",
-                    "offset": "int (default=0)",
-                    "symbol": "str (optional) - Filter by trading symbol",
-                },
-                "response": "List of ScanRow objects.",
-            },
-            {
-                "path": "/scans/{scan_id}",
-                "method": "GET",
-                "summary": "Get details of a specific scan by ID.",
-                "path_params": {"scan_id": "int (required) - Scan record ID"},
-                "response": "Detailed scan record with inputs and computed values.",
-            },
-        ],
-        "notes": [
-            "All endpoints return JSON.",
-            "Interactive Swagger UI is still available at /docs (default FastAPI docs).",
-            "This /docs endpoint provides a quick programmatic summary.",
-        ],
-    }
-
-
 @app.get("/health")
 def liveness():
     return {"status": "ok", "time": datetime.now(timezone.utc).isoformat()}
