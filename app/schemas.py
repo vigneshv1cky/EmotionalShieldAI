@@ -22,6 +22,7 @@ class HealthBlock(BaseModel):
     factor: float
     note: str
     alert: str
+    guidance: str
 
 
 class BankrollBlock(BaseModel):

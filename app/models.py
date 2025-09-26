@@ -31,6 +31,7 @@ class ScanRecord(Base):
     health_factor: Mapped[float] = Column(Float)
     health_note: Mapped[str] = Column(String)
     health_alert: Mapped[str] = Column(String)
+    health_guidance: Mapped[str] = Column(String)
 
     risk_per_trade: Mapped[float] = Column(Float)
     stop_loss_used_pct: Mapped[float] = Column(Float)

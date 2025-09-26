@@ -49,7 +49,7 @@ def liveness():
 @app.post("/scan", response_model=ScanOutput)
 def scan(payload: ScanInput, db=Depends(get_db)):
     # Health adjustment
-    h_factor, h_note, h_alert = health_factor(
+    h_factor, h_note, h_alert, h_guidance = health_factor(
         payload.sleep_hours, payload.exercise_minutes
     )
 
@@ -95,6 +95,7 @@ def scan(payload: ScanInput, db=Depends(get_db)):
         bankroll_pct=bankroll_pct,
         bankroll_amount=bankroll_amt,
         health_factor=h_factor,
+        health_guidance=h_guidance,
         health_note=h_note,
         health_alert=h_alert,
         risk_per_trade=risk_per_trade,
@@ -116,6 +117,7 @@ def scan(payload: ScanInput, db=Depends(get_db)):
             factor=round(rec.health_factor, 3),
             note=rec.health_note,
             alert=rec.health_alert,
+            guidance=rec.health_guidance,
         ),
         bankroll=BankrollBlock(
             mode=rec.bankroll_mode,
@@ -179,6 +181,7 @@ def get_scan(scan_id: int, db=Depends(get_db)):
             "health_factor": r.health_factor,
             "health_note": r.health_note,
             "health_alert": r.health_alert,
+            "health_guidance": r.health_guidance,
             "risk_per_trade": r.risk_per_trade,
             "stop_loss_used_pct": r.stop_loss_used_pct,
             "entry_price": round(r.entry_price, 4),

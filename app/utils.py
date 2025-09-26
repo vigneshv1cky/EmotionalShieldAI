@@ -15,30 +15,7 @@ except Exception:
 
 
 # --- Health & bankroll ---
-
-# def health_factor(sleep_hours: float, exercise_minutes: int) -> tuple[float, str]:
-#     # Sleep score
-#     if sleep_hours >= 7:
-#         s, s_note = 1.0, "sleep optimal"
-#     elif 5 <= sleep_hours < 7:
-#         s, s_note = 0.5, "sleep slightly off"
-#     else:  # < 5
-#         s, s_note = 0.2, "sleep poor"
-
-#     # --- Exercise score (new rules) ---
-#     if exercise_minutes < 60:
-#         e, e_note = 0.2, "exercise poor"
-#     elif 60 <= exercise_minutes < 90:
-#         e, e_note = 0.5, "exercise good"
-#     else:  # 90+
-#         e, e_note = 1.0, "exercise best"
-
-#     # Final factor = average of sleep & exercise, bounded [0.2, 1.0]
-#     f = max(0.2, min(1.0, (s + e) / 2))
-#     return f, f"{s_note}; {e_note}. risk scaled x{f:.2f}"
-
-
-def health_factor(sleep_hours: float, exercise_minutes: int) -> tuple[float, str]:
+def health_factor(sleep_hours: float, exercise_minutes: int) -> tuple[float, str, str]:
     # --- Sleep score ---
     if sleep_hours >= 7:
         s, s_note = 1.0, "Good Sleep"
@@ -59,7 +36,7 @@ def health_factor(sleep_hours: float, exercise_minutes: int) -> tuple[float, str
     sleep_level = s_note
     exercise_level = e_note
 
-    # Lookup descriptive alert from your matrix
+    # --- Risk matrix ---
     risk_matrix = {
         "Poor Sleep": {
             "Poor Exercise": (
@@ -77,7 +54,7 @@ def health_factor(sleep_hours: float, exercise_minutes: int) -> tuple[float, str
         },
         "Moderate Sleep": {
             "Poor Exercise": (
-                "🔴 Elevated Risk",
+                "🔴 High Risk",
                 "Partial rest + inactivity = sluggish, reactive trading.",
             ),
             "Moderate Exercise": (
@@ -105,18 +82,29 @@ def health_factor(sleep_hours: float, exercise_minutes: int) -> tuple[float, str
         },
     }
 
+    # --- Trading guidance per alert ---
+    trading_guidance = {
+        "🟢 Optimal": "Conditions are favorable; trade normally within risk rules.",
+        "🟡 Caution": "Conditions are decent; reduce position size slightly.",
+        "🟠 Moderate Risk": "Conditions are mixed; reduce trade frequency and size.",
+        "🟠 Elevated Risk": "Conditions are imbalanced; limit trades, be defensive.",
+        "🔴 High Risk": "Avoid trading; risk of errors and emotional decisions is high.",
+    }
+
     # Final factor = average of sleep & exercise, bounded [0.2, 1.0]
     f = max(0.2, min(1.0, (s + e) / 2))
 
     try:
         alert, description = risk_matrix[sleep_level][exercise_level]
+        guidance = trading_guidance.get(alert, "")
     except KeyError:
-        alert, description = "❓", "Unexpected combination."
+        alert, description, guidance = "❓", "Unexpected combination.", ""
 
     return (
         f,
         f"{alert} | {description} (sleep={s_note}, exercise={e_note}, risk scale x{f:.2f})",
         alert,
+        guidance,
     )
 
 

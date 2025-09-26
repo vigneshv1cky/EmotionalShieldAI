@@ -8,14 +8,14 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///tradefit.db")
 
 
 # --- Bankroll policy (internal only) ---
-def _get_bool(name: str, default: bool) -> bool:
+def _get_bool(name: str, default: bool = "true") -> bool:
     v = os.getenv(name)
     if v is None:
         return default
     return v.strip().lower() in {"1", "true", "yes", "y"}
 
 
-def get_env_float(name: str, default: float | None = None) -> float:
+def get_env_float(name: str, default: float = 1) -> float:
     v = os.getenv(name)
     if v is None:
         if default is not None:
