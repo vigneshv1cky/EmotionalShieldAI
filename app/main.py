@@ -17,6 +17,11 @@ from .schemas import (
 from .utils import health_factor, compute_dynamic_bankroll, fetch_price_and_atr
 from . import crud
 
+from .config import (
+    risk_per_trade_pct,
+    stop_loss_pct,
+)
+
 app = FastAPI(title="Morning TradeFit Scan API", version="4.0.0")
 Base.metadata.create_all(bind=engine)
 
@@ -44,7 +49,9 @@ def liveness():
 @app.post("/scan", response_model=ScanOutput)
 def scan(payload: ScanInput, db=Depends(get_db)):
     # Health adjustment
-    h_factor, h_note = health_factor(payload.sleep_hours, payload.exercise_minutes)
+    h_factor, h_note, h_alert = health_factor(
+        payload.sleep_hours, payload.exercise_minutes
+    )
 
     # Compute bankroll automatically
     bankroll_amt, bankroll_pct = compute_dynamic_bankroll(payload.total_value, h_factor)
@@ -54,11 +61,11 @@ def scan(payload: ScanInput, db=Depends(get_db)):
         )
 
     # Risk per trade in $
-    risk_per_trade_pct = 0.05
+    # risk_per_trade_pct = 0.01
     risk_per_trade = bankroll_amt * risk_per_trade_pct
 
     # --- Stop-loss setup ---
-    stop_loss_pct = 0.01
+    # stop_loss_pct = 0.01
     if stop_loss_pct <= 0:
         raise HTTPException(status_code=400, detail="stop_loss_pct must be > 0.")
 
@@ -68,15 +75,13 @@ def scan(payload: ScanInput, db=Depends(get_db)):
         raise HTTPException(status_code=400, detail="No price data available.")
 
     # --- Position sizing (capped by bankroll) ---
-    # Formula: position = (bankroll * risk_pct) / stop_loss_pct
-    raw_position_usd = risk_per_trade / stop_loss_pct
-    final_position_usd = min(raw_position_usd, bankroll_amt)
-
-    # --- Estimated shares ---
-    est_shares = final_position_usd / entry_price
 
     # StopLoss per share
-    stop_loss_per_share = (final_position_usd * stop_loss_pct) / est_shares
+    stop_loss_at = entry_price - (entry_price * stop_loss_pct)
+    risk_per_share = entry_price * stop_loss_pct
+
+    # --- Estimated shares ---
+    normal_pos_size = risk_per_trade / risk_per_share
 
     # Persist
     rec = ScanRecord(
@@ -91,12 +96,13 @@ def scan(payload: ScanInput, db=Depends(get_db)):
         bankroll_amount=bankroll_amt,
         health_factor=h_factor,
         health_note=h_note,
+        health_alert=h_alert,
         risk_per_trade=risk_per_trade,
         stop_loss_used_pct=stop_loss_pct,
-        final_position_usd=final_position_usd,
         entry_price=entry_price,
-        est_shares=est_shares,
-        stop_loss_per_share=stop_loss_per_share,
+        normal_pos_size=normal_pos_size,
+        stop_loss_at=stop_loss_at,
+        risk_per_share=risk_per_share,
     )
     rec = crud.create_scan(db, rec)
 
@@ -109,6 +115,7 @@ def scan(payload: ScanInput, db=Depends(get_db)):
             exercise_minutes=rec.exercise_minutes,
             factor=round(rec.health_factor, 3),
             note=rec.health_note,
+            alert=rec.health_alert,
         ),
         bankroll=BankrollBlock(
             mode=rec.bankroll_mode,
@@ -121,12 +128,12 @@ def scan(payload: ScanInput, db=Depends(get_db)):
             stop_loss_pct=round(rec.stop_loss_used_pct, 4),
         ),
         position=PositionBlock(
-            final_position_usd=round(rec.final_position_usd, 2),
             entry_price=round(rec.entry_price, 4) if rec.entry_price else None,
-            est_shares=round(rec.est_shares, 4) if rec.est_shares else None,
-            stop_loss_per_share=(
-                round(rec.stop_loss_per_share, 4) if rec.stop_loss_per_share else None
+            normal_pos_size=(
+                round(rec.normal_pos_size, 4) if rec.normal_pos_size else None
             ),
+            stop_loss_at=(round(rec.stop_loss_at, 4) if rec.stop_loss_at else None),
+            risk_per_share=round(rec.risk_per_share, 4) if rec.risk_per_share else None,
         ),
     )
     return out
@@ -142,7 +149,6 @@ def list_scans(
             id=r.id,
             created_at=r.created_at,
             symbol=r.symbol,
-            final_position_usd=round(r.final_position_usd, 2),
             risk_per_trade=round(r.risk_per_trade, 2),
             stop_loss_used_pct=round(r.stop_loss_used_pct, 4),
         )
@@ -172,11 +178,12 @@ def get_scan(scan_id: int, db=Depends(get_db)):
             "bankroll_amount": r.bankroll_amount,
             "health_factor": r.health_factor,
             "health_note": r.health_note,
+            "health_alert": r.health_alert,
             "risk_per_trade": r.risk_per_trade,
             "stop_loss_used_pct": r.stop_loss_used_pct,
-            "final_position_usd": r.final_position_usd,
             "entry_price": round(r.entry_price, 4),
-            "est_shares": round(r.est_shares, 4),
-            "stop_loss_per_share": round(r.stop_loss_per_share, 4),
+            "normal_pos_size": round(r.normal_pos_size, 4),
+            "stop_loss_at": round(r.stop_loss_at, 4),
+            "risk_per_share": round(r.risk_per_share, 4),
         },
     }

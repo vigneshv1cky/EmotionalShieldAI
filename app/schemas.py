@@ -21,6 +21,7 @@ class HealthBlock(BaseModel):
     exercise_minutes: int
     factor: float
     note: str
+    alert: str
 
 
 class BankrollBlock(BaseModel):
@@ -36,10 +37,10 @@ class RiskBlock(BaseModel):
 
 
 class PositionBlock(BaseModel):
-    final_position_usd: float
     entry_price: float
-    est_shares: float
-    stop_loss_per_share: float
+    normal_pos_size: float
+    stop_loss_at: float
+    risk_per_share: float
 
 
 class ScanOutput(BaseModel):
@@ -56,6 +57,5 @@ class ScanRow(BaseModel):
     id: int
     created_at: datetime
     symbol: str
-    final_position_usd: float
     risk_per_trade: float
     stop_loss_used_pct: float

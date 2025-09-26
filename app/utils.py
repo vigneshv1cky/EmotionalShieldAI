@@ -3,8 +3,6 @@ from typing import Optional
 import numpy as np
 from .config import (
     BANKROLL_BASE_PCT,
-    BANKROLL_MIN_PCT,
-    BANKROLL_MAX_PCT,
     BANKROLL_HEALTH_SCALE,
 )
 
@@ -15,29 +13,111 @@ try:
 except Exception:
     _HAS_YF = False
 
+
 # --- Health & bankroll ---
+
+# def health_factor(sleep_hours: float, exercise_minutes: int) -> tuple[float, str]:
+#     # Sleep score
+#     if sleep_hours >= 7:
+#         s, s_note = 1.0, "sleep optimal"
+#     elif 5 <= sleep_hours < 7:
+#         s, s_note = 0.5, "sleep slightly off"
+#     else:  # < 5
+#         s, s_note = 0.2, "sleep poor"
+
+#     # --- Exercise score (new rules) ---
+#     if exercise_minutes < 60:
+#         e, e_note = 0.2, "exercise poor"
+#     elif 60 <= exercise_minutes < 90:
+#         e, e_note = 0.5, "exercise good"
+#     else:  # 90+
+#         e, e_note = 1.0, "exercise best"
+
+#     # Final factor = average of sleep & exercise, bounded [0.2, 1.0]
+#     f = max(0.2, min(1.0, (s + e) / 2))
+#     return f, f"{s_note}; {e_note}. risk scaled x{f:.2f}"
 
 
 def health_factor(sleep_hours: float, exercise_minutes: int) -> tuple[float, str]:
-    # Sleep score
+    # --- Sleep score ---
     if sleep_hours >= 7:
-        s, s_note = 1.0, "sleep optimal"
+        s, s_note = 1.0, "Good Sleep"
     elif 5 <= sleep_hours < 7:
-        s, s_note = 0.5, "sleep slightly off"
+        s, s_note = 0.5, "Moderate Sleep"
     else:  # < 5
-        s, s_note = 0.2, "sleep poor"
+        s, s_note = 0.2, "Poor Sleep"
 
-    # --- Exercise score (new rules) ---
+    # --- Exercise score ---
     if exercise_minutes < 60:
-        e, e_note = 0.2, "exercise poor"
+        e, e_note = 0.2, "Poor Exercise"
     elif 60 <= exercise_minutes < 90:
-        e, e_note = 0.5, "exercise good"
+        e, e_note = 0.5, "Moderate Exercise"
     else:  # 90+
-        e, e_note = 1.0, "exercise best"
+        e, e_note = 1.0, "Good Exercise"
+
+    # --- Combine into category ---
+    sleep_level = s_note
+    exercise_level = e_note
+
+    # Lookup descriptive alert from your matrix
+    risk_matrix = {
+        "Poor Sleep": {
+            "Poor Exercise": (
+                "🔴 High Risk",
+                "Judgment impaired, stress high, discipline weak — avoid trading.",
+            ),
+            "Moderate Exercise": (
+                "🔴 High Risk",
+                "Some physical balance, but fatigue dominates — high chance of costly mistakes.",
+            ),
+            "Good Exercise": (
+                "🟠 Elevated Risk",
+                "Good fitness helps, but poor rest still limits focus.",
+            ),
+        },
+        "Moderate Sleep": {
+            "Poor Exercise": (
+                "🔴 Elevated Risk",
+                "Partial rest + inactivity = sluggish, reactive trading.",
+            ),
+            "Moderate Exercise": (
+                "🟠 Moderate Risk",
+                "Fair balance, but not peak performance — trade smaller size.",
+            ),
+            "Good Exercise": (
+                "🟡 Caution",
+                "Reasonable discipline, but not optimal endurance.",
+            ),
+        },
+        "Good Sleep": {
+            "Poor Exercise": (
+                "🟠 Moderate Risk",
+                "Rested mind, but low fitness = shorter stamina in volatile sessions.",
+            ),
+            "Moderate Exercise": (
+                "🟡 Caution",
+                "Balanced state, can trade cautiously with discipline.",
+            ),
+            "Good Exercise": (
+                "🟢 Optimal",
+                "Peak focus, strong discipline, reduced stress — ideal trading state.",
+            ),
+        },
+    }
 
     # Final factor = average of sleep & exercise, bounded [0.2, 1.0]
     f = max(0.2, min(1.0, (s + e) / 2))
-    return f, f"{s_note}; {e_note}. risk scaled x{f:.2f}"
+
+    try:
+        alert, description = risk_matrix[sleep_level][exercise_level]
+    except KeyError:
+        alert, description = "❓", "Unexpected combination."
+
+    return (
+        f,
+        f"{alert} | {description} (sleep={s_note}, exercise={e_note}, risk scale x{f:.2f})",
+        alert,
+    )
 
 
 def compute_dynamic_bankroll(
